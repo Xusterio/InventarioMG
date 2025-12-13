@@ -1,0 +1,71 @@
+:root {
+    --sidebar-width: 280px;
+    --sidebar-bg-color: #212529;
+}
+
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x: hidden;
+}
+
+.main-content {
+    padding: 2rem;
+    transition: margin-left .3s;
+}
+
+.sidebar {
+    width: var(--sidebar-width);
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1020;
+    background-color: var(--sidebar-bg-color) !important;
+}
+
+.sidebar .nav-link:hover, .sidebar .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* --- ESTILOS RESPONSIVE --- */
+
+/* Pantallas Grandes (Desktop) */
+@media (min-width: 992px) {
+    .main-content {
+        margin-left: var(--sidebar-width);
+    }
+}
+
+/* Pantallas Pequeñas (Tablet y Móvil) */
+@media (max-width: 991.98px) {
+    .sidebar {
+        margin-left: calc(-1 * var(--sidebar-width)); /* Menú oculto por defecto */
+        transition: margin-left .3s;
+    }
+    .sidebar.active {
+        margin-left: 0; /* Menú visible */
+    }
+    .main-content {
+        margin-left: 0;
+        padding-top: 5rem;
+    }
+    .mobile-header {
+        display: flex;
+        align-items: center;
+        padding: .5rem 1rem;
+        background-color: var(--sidebar-bg-color);
+        color: white;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1019;
+    }
+}
+
+/* (Resto de estilos para cards, botones, etc.) */
+.card { border: none; border-radius: 0.75rem; box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.05); }
+.card-header { background-color: #fff; border-bottom: 1px solid #dee2e6; font-weight: 500; }
+.btn { border-radius: 0.5rem; font-weight: 500; }
+.dt-buttons .btn { margin-right: 5px; }
