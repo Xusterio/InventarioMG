@@ -1,0 +1,24 @@
+# Archivo .gitignore
+# Archivos de configuración con credenciales (CRÍTICO: No subir credenciales a GitHub)
+/config/database.php
+
+# Archivos de la base de datos (generalmente la subida inicial es suficiente)
+*.sql
+
+# Archivos de subida de usuarios (PDFs de actas, imágenes de devoluciones)
+/uploads/
+
+# Archivos generados de QR y caché de phpqrcode
+/public/temp_qr/
+/phpqrcode/cache/
+
+# Archivos comprimidos (ya tienes las carpetas originales)
+*.rar
+*.zip
+
+# Archivos de log (si tu aplicación genera logs)
+*.log
+
+# Entornos de desarrollo comunes
+.env
+/vendor/
