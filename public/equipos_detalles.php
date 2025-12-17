@@ -172,11 +172,6 @@ if (!$equipo) {
                                         <span class="info-label">Sucursal:</span>
                                         <p><?php echo htmlspecialchars($equipo['sucursal_nombre']); ?></p>
                                     </div>
-                                    <div class="col-md-6 mb-3">
-                                        <span class="info-label">Tipo de Adquisición:</span>
-                                        <p><?php echo htmlspecialchars($equipo['tipo_adquisicion']); ?></p>
-                                    </div>
-                                </div>
 
                                 <?php if ($equipo['fecha_adquisicion']): ?>
                                 <div class="row">

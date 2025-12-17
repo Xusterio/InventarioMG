@@ -81,7 +81,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Cargar datos del usuario
-$stmt_usuario = $conexion->prepare("SELECT u.id, u.nombre, u.email, u.id_sucursal, r.id_rol 
+// CORRECCIÓN: Se cambia r.id_rol por ur.id_rol (que es el campo en la tabla intermedia) 
+// o simplemente r.id si quieres el ID de la tabla de roles.
+$stmt_usuario = $conexion->prepare("SELECT u.id, u.nombre, u.email, u.id_sucursal, ur.id_rol 
                                     FROM usuarios u 
                                     LEFT JOIN usuario_roles ur ON u.id = ur.id_usuario 
                                     LEFT JOIN roles r ON ur.id_rol = r.id

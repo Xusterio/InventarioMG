@@ -1,79 +1,97 @@
 <?php
 require_once '../templates/header.php';
-
-$id_usuario_logueado = $_SESSION['user_id'];
-
-// Lógica para procesar el cambio de contraseña
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $password_actual = $_POST['password_actual'];
-    $password_nueva = $_POST['password_nueva'];
-    $password_confirmar = $_POST['password_confirmar'];
-
-    // 1. Obtener el hash de la contraseña actual del usuario desde la BD
-    $stmt = $conexion->prepare("SELECT password FROM usuarios WHERE id = ?");
-    $stmt->bind_param("i", $id_usuario_logueado);
-    $stmt->execute();
-    $resultado = $stmt->get_result();
-    $usuario = $resultado->fetch_assoc();
-    $hash_actual = $usuario['password'];
-    $stmt->close();
-
-    // 2. Verificar si la contraseña actual es correcta
-    if (password_verify($password_actual, $hash_actual)) {
-        // 3. Verificar si las nuevas contraseñas coinciden y no están vacías
-        if (!empty($password_nueva) && $password_nueva === $password_confirmar) {
-            // 4. Hashear la nueva contraseña
-            $nuevo_hash = password_hash($password_nueva, PASSWORD_DEFAULT);
-
-            // 5. Actualizar la contraseña en la base de datos
-            $stmt_update = $conexion->prepare("UPDATE usuarios SET password = ? WHERE id = ?");
-            $stmt_update->bind_param("si", $nuevo_hash, $id_usuario_logueado);
-            
-            if ($stmt_update->execute()) {
-                $success_message = "¡Contraseña actualizada con éxito!";
-            } else {
-                $error_message = "Error al actualizar la contraseña en la base de datos.";
-            }
-            $stmt_update->close();
-        } else {
-            $error_message = "La nueva contraseña no coincide o está vacía. Por favor, inténtelo de nuevo.";
-        }
-    } else {
-        $error_message = "La contraseña actual es incorrecta.";
-    }
-}
+// Se asume que la sesión ya está iniciada en el header o mediante un middleware
 ?>
 
-<h1 class="h2 mb-4">Restablecer Contraseña</h1>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <div class="display-6 text-primary mb-2">
+                            <i class="bi bi-shield-lock"></i>
+                        </div>
+                        <h2 class="h4 fw-bold">Cambiar Contraseña</h2>
+                        <p class="text-muted small">Asegúrate de usar una contraseña segura que no utilices en otros sitios.</p>
+                    </div>
 
-<?php if (isset($error_message)): ?>
-    <div class="alert alert-danger"><?php echo $error_message; ?></div>
-<?php endif; ?>
+                    <?php if (isset($_GET['error'])): ?>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            La contraseña actual es incorrecta.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    <?php endif; ?>
 
-<?php if (isset($success_message)): ?>
-    <div class="alert alert-success"><?php echo $success_message; ?></div>
-<?php endif; ?>
+                    <form action="../includes/procesar_cambio_password.php" method="POST">
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label small fw-semibold">Contraseña Actual</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted">
+                                    <i class="bi bi-key"></i>
+                                </span>
+                                <input type="password" class="form-control bg-light border-start-0" 
+                                       id="current_password" name="current_password" 
+                                       placeholder="Ingresa tu clave actual" required>
+                            </div>
+                        </div>
 
-<form method="POST">
-    <div class="row">
-        <div class="col-md-8 col-lg-6">
-            <div class="mb-3">
-                <label for="password_actual" class="form-label">Contraseña Actual <span class="text-danger">*</span></label>
-                <input type="password" class="form-control" name="password_actual" id="password_actual" required>
+                        <hr class="text-muted opacity-25 my-4">
+
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label small fw-semibold">Nueva Contraseña</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted">
+                                    <i class="bi bi-lock"></i>
+                                </span>
+                                <input type="password" class="form-control bg-light border-start-0" 
+                                       id="new_password" name="new_password" 
+                                       placeholder="Mínimo 8 caracteres" required minlength="8">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="confirm_password" class="form-label small fw-semibold">Confirmar Nueva Contraseña</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted">
+                                    <i class="bi bi-lock-check"></i>
+                                </span>
+                                <input type="password" class="form-control bg-light border-start-0" 
+                                       id="confirm_password" name="confirm_password" 
+                                       placeholder="Repite tu nueva clave" required>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary py-2 fw-bold">
+                                <i class="bi bi-check-circle me-2"></i>Actualizar Contraseña
+                            </button>
+                            <a href="index.php" class="btn btn-link link-secondary text-decoration-none small text-center">
+                                Cancelar y volver al inicio
+                            </a>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="mb-3">
-                <label for="password_nueva" class="form-label">Nueva Contraseña <span class="text-danger">*</span></label>
-                <input type="password" class="form-control" name="password_nueva" id="password_nueva" required>
+            <div class="text-center mt-4">
+                <p class="text-muted small">&copy; <?php echo date('Y'); ?> Inventario MG - Seguridad</p>
             </div>
-            <div class="mb-3">
-                <label for="password_confirmar" class="form-label">Confirmar Nueva Contraseña <span class="text-danger">*</span></label>
-                <input type="password" class="form-control" name="password_confirmar" id="password_confirmar" required>
-            </div>
-            
-            <hr class="my-4">
-            <button type="submit" class="btn btn-primary">Cambiar Contraseña</button>
         </div>
     </div>
-</form>
+</div>
+
+<script>
+    // Validación básica en el cliente para asegurar que las contraseñas coinciden
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const newPass = document.getElementById('new_password').value;
+        const confirmPass = document.getElementById('confirm_password').value;
+
+        if (newPass !== confirmPass) {
+            e.preventDefault();
+            alert('Las nuevas contraseñas no coinciden. Por favor, verifica.');
+        }
+    });
+</script>
 
 <?php require_once '../templates/footer.php'; ?>
