@@ -18,7 +18,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email']);
     $password = $_POST['password'];
     $id_rol = filter_input(INPUT_POST, 'id_rol', FILTER_VALIDATE_INT);
-    $id_sucursal = filter_input(INPUT_POST, 'id_sucursal', FILTER_VALIDATE_INT) ?? null; // Puede ser NULL para Admin General
+    
+    // Manejo de Sucursal
+    $id_sucursal_raw = $_POST['id_sucursal'];
+    $id_sucursal = (empty($id_sucursal_raw)) ? null : (int)$id_sucursal_raw;
 
     // Validación básica
     if (empty($nombre) || empty($email) || empty($password) || !$id_rol) {
@@ -29,13 +32,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Encriptar contraseña
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-        // Iniciar transacción (opcional pero recomendado para operaciones multi-tabla)
         $conexion->begin_transaction();
         $is_ok = false;
 
         try {
             // 1. Insertar el usuario en la tabla 'usuarios'
-            $stmt = $conexion->prepare("INSERT INTO usuarios (nombre, email, password, id_sucursal) VALUES (?, ?, ?, ?)");
+            // CORRECCIÓN: Se agrega la columna 'activo' y se cambia el bind_param a "sssi" 
+            // para que la contraseña se trate como String (s) y no como Integer (i).
+            $stmt = $conexion->prepare("INSERT INTO usuarios (nombre, email, password, id_sucursal, activo) VALUES (?, ?, ?, ?, 1)");
+            
+            // "sssi" significa: nombre (string), email (string), password (string), id_sucursal (integer/null)
             $stmt->bind_param("sssi", $nombre, $email, $hashed_password, $id_sucursal);
             
             if (!$stmt->execute()) {
@@ -53,21 +59,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $stmt_rol->close();
             
-            // 3. Commit de la transacción
             $conexion->commit();
             $is_ok = true;
             
         } catch (Exception $e) {
             $conexion->rollback();
             $error_message = "Error en la base de datos: " . $e->getMessage();
-            // Detectar error de duplicidad
             if (strpos($error_message, 'Duplicate entry') !== false) {
                  $error_message = "El email '{$email}' ya está registrado.";
             }
         }
         
         if ($is_ok) {
-            // Redirigir a la página principal de gestión de usuarios con mensaje de éxito
             ob_end_clean();
             header("Location: gestion_usuarios.php?status=success_add");
             exit();
@@ -75,13 +78,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Cargar roles y sucursales
+// Cargar roles y sucursales para el formulario
 $roles = $conexion->query("SELECT id, nombre_rol FROM roles ORDER BY nombre_rol");
 $sucursales = $conexion->query("SELECT id, nombre FROM sucursales WHERE estado = 'Activo' ORDER BY nombre");
 ?>
 
 <div class="container-fluid py-4">
-    
     <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2 text-dark fw-bold">
             <i class="bi bi-person-plus-fill me-2 text-primary"></i> Registrar Nuevo Usuario
@@ -103,9 +105,7 @@ $sucursales = $conexion->query("SELECT id, nombre FROM sucursales WHERE estado =
         <div class="col-md-8 col-lg-6">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-light py-3">
-                    <h5 class="card-title mb-0 text-primary">
-                        Formulario de Registro
-                    </h5>
+                    <h5 class="card-title mb-0 text-primary">Formulario de Registro</h5>
                 </div>
                 <div class="card-body">
                     <form method="POST">
@@ -144,7 +144,7 @@ $sucursales = $conexion->query("SELECT id, nombre FROM sucursales WHERE estado =
                                         </option>
                                     <?php endwhile; ?>
                                 </select>
-                                <small class="text-muted">Solo se aplica si el rol lo requiere.</small>
+                                <small class="text-muted">Si selecciona "Todas", tendrá acceso global.</small>
                             </div>
                         </div>
 

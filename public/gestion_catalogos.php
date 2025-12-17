@@ -95,7 +95,7 @@ $active_tab = $_GET['active_tab'] ?? 'tab-sucursales';
                     'success_add' => 'Registro agregado con éxito.',
                     'success_state' => 'Estado actualizado.',
                     'success_delete' => 'Registro eliminado permanentemente.',
-                    'error_delete_fk' => 'No se puede eliminar: El registro está en uso.',
+                    'error_delete_fk' => 'No se puede eliminar: El registro está en uso en otra tabla.',
                     'error_duplicate' => 'El nombre ya existe en este catálogo.',
                     'error_db' => 'Error crítico en la base de datos.'
                 ];
@@ -193,15 +193,35 @@ $active_tab = $_GET['active_tab'] ?? 'tab-sucursales';
                         <?php renderFormFooter(); ?>
                         <?php renderTable($modelos, 'modelo', ['Marca', 'Modelo'], ['marca_nombre', 'nombre']); ?>
                     </div>
-
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 1.5rem;">
+            <div class="modal-body text-center p-5">
+                <div class="mb-4">
+                    <i class="bi bi-exclamation-triangle-fill" style="font-size: 5rem; color: #F4AC05;"></i>
+                </div>
+                <h2 class="fw-bold mb-3" style="color: #0F1A2D;">¿Confirmar eliminación?</h2>
+                <p class="text-muted mb-4 lead">Estás a punto de borrar este registro permanentemente. Esta acción no se puede deshacer.</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <button type="button" class="btn btn-light btn-lg px-4 fw-bold text-secondary" data-bs-dismiss="modal">CANCELAR</button>
+                    <a id="btnConfirmarEliminar" href="#" class="btn btn-danger btn-lg px-4 fw-bold">ELIMINAR AHORA</a>
+                </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center bg-light rounded-bottom-4 py-3">
+                <span class="small text-muted text-uppercase fw-bold letter-spacing-1">Sistema de Inventario TI</span>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?php
-// FUNCIONES AUXILIARES PARA LIMPIAR EL CÓDIGO HTML
+// FUNCIONES AUXILIARES
 function renderFormHeader($titulo, $id, $method = "POST") {
     echo "
     <div class='mb-4 bg-light p-3 rounded border border-dashed'>
@@ -236,13 +256,14 @@ function renderTable($result, $type, $headers, $fields) {
         echo "<td><span class='badge $badge rounded-pill'>{$row['estado']}</span></td>
         <td class='text-end'>
             <div class='btn-group btn-group-sm'>
-                <a href='catalogo_editar.php?id={$row['id']}&type=$type' class='btn btn-outline-warning'><i class='bi bi-pencil'></i></a>";
+                <a href='catalogo_editar.php?id={$row['id']}&type=$type' class='btn btn-outline-warning' title='Editar'><i class='bi bi-pencil'></i></a>";
         if($row['estado'] == 'Activo') {
-            echo "<a href='?action=deactivate&id={$row['id']}&type=$type' class='btn btn-outline-secondary'><i class='bi bi-toggle-on'></i></a>";
+            echo "<a href='?action=deactivate&id={$row['id']}&type=$type' class='btn btn-outline-secondary' title='Desactivar'><i class='bi bi-toggle-on'></i></a>";
         } else {
-            echo "<a href='?action=activate&id={$row['id']}&type=$type' class='btn btn-outline-success'><i class='bi bi-toggle-off'></i></a>";
+            echo "<a href='?action=activate&id={$row['id']}&type=$type' class='btn btn-outline-success' title='Activar'><i class='bi bi-toggle-off'></i></a>";
         }
-        echo "<button onclick='confirmar({$row['id']}, \"$type\")' class='btn btn-outline-danger'><i class='bi bi-trash'></i></button>
+        // CAMBIO: Ahora llama a abrirModal en lugar del confirm nativo
+        echo "<button type='button' onclick='abrirModal({$row['id']}, \"$type\")' class='btn btn-outline-danger' title='Eliminar'><i class='bi bi-trash'></i></button>
             </div>
         </td></tr>";
     }
@@ -251,18 +272,26 @@ function renderTable($result, $type, $headers, $fields) {
 ?>
 
 <script>
-function confirmar(id, type) {
-    if(confirm('¿Seguro que deseas ELIMINAR permanentemente este registro?')) {
-        window.location.href = `?action=delete&id=${id}&type=${type}`;
-    }
+// Función para abrir el modal personalizado
+function abrirModal(id, type) {
+    const modal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+    const linkEliminar = document.getElementById('btnConfirmarEliminar');
+    
+    // Configuramos la URL de eliminación final
+    linkEliminar.href = `?action=delete&id=${id}&type=${type}`;
+    
+    // Mostramos el modal
+    modal.show();
 }
 </script>
 
 <style>
-.nav-pills .nav-link { color: #555; font-weight: 500; border-radius: 0.5rem; }
-.nav-pills .nav-link.active { background-color: #0d6efd; box-shadow: 0 4px 10px rgba(13,110,253,0.2); }
-.border-dashed { border-style: dashed !important; }
-.table th { font-size: 0.75rem; text-transform: uppercase; color: #888; letter-spacing: 0.5px; }
+.nav-pills .nav-link { color: #555; font-weight: 500; border-radius: 0.5rem; transition: 0.3s; }
+.nav-pills .nav-link:hover { background-color: #f8f9fa; }
+.nav-pills .nav-link.active { background-color: #0F1A2D; color: white !important; box-shadow: 0 4px 10px rgba(15,26,45,0.3); }
+.border-dashed { border-style: dashed !important; border-width: 2px !important; }
+.table th { font-size: 0.7rem; text-transform: uppercase; color: #6c757d; letter-spacing: 0.8px; padding: 10px; }
+.letter-spacing-1 { letter-spacing: 1.5px; }
 </style>
 
 <?php 
